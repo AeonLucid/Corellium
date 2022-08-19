@@ -1,5 +1,3 @@
-﻿using Corellium.Api.Net.Models;
+﻿namespace Corellium.Api.Data;
 
-namespace Corellium.Api.Data;
-
-internal record TokenResponseCache(CorelliumTokensResponse Response, DateTimeOffset RefreshAt);
+internal record TokenResponseCache(string Token, DateTimeOffset RefreshAt);

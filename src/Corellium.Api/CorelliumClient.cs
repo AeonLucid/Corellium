@@ -13,16 +13,20 @@ namespace Corellium.Api;
 public class CorelliumClient
 {
     private readonly CorelliumOptions _options;
-    private readonly FlurlClient _client;
 
     private TokenResponseCache? _accessToken;
-    private string? _supportedDevices;
-    private string? _teams;
+    private List<CorelliumSupportedDevice>? _supportedDevices;
+    
+    private Dictionary<string, CorelliumTeam> _teams;
+    private Dictionary<string, CorelliumUser> _users;
 
     public CorelliumClient(CorelliumOptions options)
     {
         _options = options;
-        _client = new FlurlClient
+        _teams = new Dictionary<string, CorelliumTeam>();
+        _users = new Dictionary<string, CorelliumUser>();
+        
+        Http = new FlurlClient
         {
             BaseUrl = $"{_options.Endpoint}/api/v1",
             Settings = new ClientFlurlHttpSettings
@@ -36,6 +40,8 @@ public class CorelliumClient
             }
         };
     }
+    
+    internal FlurlClient Http { get; }
 
     private bool ShouldRefreshToken()
     {
@@ -54,9 +60,10 @@ public class CorelliumClient
 
     public async Task<string> GetAccessTokenAsync()
     {
+        // TODO: Lock
         if (ShouldRefreshToken())
         {
-            var request = new CorelliumTokensRequest();
+            var request = new TokensRequest();
 
             if (!string.IsNullOrEmpty(_options.ApiToken))
             {
@@ -69,14 +76,150 @@ public class CorelliumClient
                 request.TotpToken = _options.TotpToken;
             }
 
-            var token = await _client
+            var token = await Http
                 .Request("/tokens")
                 .PostJsonAsync(request)
-                .ReceiveJson<CorelliumTokensResponse>();
+                .ReceiveJson<TokensResponse>();
 
-            _accessToken = new TokenResponseCache(token, token.Expiration.Subtract(TimeSpan.FromMinutes(15)));
+            _accessToken = new TokenResponseCache(token.Token, token.Expiration.Subtract(TimeSpan.FromMinutes(15)));
         }
         
-        return _accessToken!.Response.Token;
+        return _accessToken!.Token;
+    }
+
+    public async Task<CorelliumProject?> GetProjectNamedAsync(string name)
+    {
+        var projects = await GetProjectsAsync();
+        return projects.FirstOrDefault(x => x.Name.Equals(name));
+    }
+
+    /// <summary>
+    ///     Returns an array of <see cref="CorelliumProject"/>s that this client is allowed to access.
+    /// </summary>
+    /// <returns></returns>
+    public async Task<List<CorelliumProject>> GetProjectsAsync()
+    {
+        var result = new List<CorelliumProject>();
+        
+        var response = await Http
+            .Request("/projects")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<List<ProjectResponse>>();
+        
+        foreach (var project in response)
+        {
+            result.Add(new CorelliumProject(this, project));
+        }
+
+        return result;
+    }
+
+    internal async Task<ProjectResponse> GetProjectAsync(string id)
+    {
+        return await Http
+            .Request("/projects", id)
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<ProjectResponse>();
+    }
+
+    /// <summary>
+    ///     Returns an array of <see cref="CorelliumImage"/>s that this client is allowed to access.
+    /// </summary>
+    public async Task<List<CorelliumImage>> FilesAsync()
+    {
+        return await Http
+            .Request("/images")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<List<CorelliumImage>>();
+    }
+
+    /// <summary>
+    ///     Returns teams and users belonging to the domain.
+    /// 
+    ///     This function is only available to administrators.
+    /// </summary>
+    public async Task<TeamsAndUsers> GetTeamsAndUsersAsync()
+    {
+        var teams = _teams = new Dictionary<string, CorelliumTeam>();
+        var users = _users = new Dictionary<string, CorelliumUser>();
+        
+        var res = await Http
+            .Request("/teams")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<List<TeamInfo>>();
+        
+        foreach (var team in res)
+        {
+            teams.Add(team.Id, new CorelliumTeam(this, team));
+
+            if (team.Id == "all-users")
+            {
+                foreach (var user in team.Users)
+                {
+                    users.Add(user.Id, new CorelliumUser(this, user));
+                }
+            }
+        }
+        
+        return new TeamsAndUsers(teams, users);
+    }
+
+    internal CorelliumUser GetUser(string userId)
+    {
+        return _users[userId];
+    }
+
+    internal CorelliumTeam GetTeam(string teamId)
+    {
+        return _teams[teamId];
+    }
+
+    /// <summary>
+    ///     TODO: Untested
+    ///     Creates a new user in the domain.
+    ///
+    ///     This function is only available to domain administrators.
+    /// </summary>
+    public async Task<CorelliumUser> CreateUser(string login, string name, string email, string password)
+    {
+        var response = await Http
+            .Request("/users")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .PostJsonAsync(new
+            {
+                Label = name,
+                Name = login,
+                Email = email,
+                Password = password
+            })
+            .ReceiveJson();
+        
+        await GetTeamsAndUsersAsync();
+        return GetUser(response.Id);
+    }
+
+    /// <summary>
+    ///     TODO: Untested
+    ///     Destroys a user in the domain.
+    ///
+    ///     This function is only available to domain administrators.
+    /// </summary>
+    public async Task DestroyUserAsync(string userId)
+    {
+        await Http
+            .Request("/users", userId)
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .DeleteAsync();
+    }
+
+    /// <summary>
+    ///     Returns supported device list
+    /// </summary>
+    public async Task<List<CorelliumSupportedDevice>> GetSupportedDevicesAsync()
+    {
+        return _supportedDevices ??= await Http
+            .Request("/supported")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<List<CorelliumSupportedDevice>>();
     }
 }

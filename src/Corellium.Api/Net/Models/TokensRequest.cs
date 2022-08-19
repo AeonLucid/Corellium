@@ -1,6 +1,6 @@
 ﻿namespace Corellium.Api.Net.Models;
 
-public class CorelliumTokensRequest
+internal class TokensRequest
 {
     public string? ApiToken { get; set; }
     
