@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using Flurl.Http.Configuration;
 
-namespace Corellium.Api.Net;
+namespace Corellium.Api.Net.Serializer;
 
-public class JsonNetSerializer : ISerializer
+internal class JsonNetSerializer : ISerializer
 {
     private readonly JsonSerializerOptions _options;
 

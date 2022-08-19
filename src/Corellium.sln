@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corellium.Api", "Corellium.Api\Corellium.Api.csproj", "{B7867D12-A1BD-4CF3-AD33-ABFD14626EE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corellium.Example", "Corellium.Example\Corellium.Example.csproj", "{8294559A-8B6D-4D4E-B7D2-AE8794A4210F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B7867D12-A1BD-4CF3-AD33-ABFD14626EE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7867D12-A1BD-4CF3-AD33-ABFD14626EE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7867D12-A1BD-4CF3-AD33-ABFD14626EE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7867D12-A1BD-4CF3-AD33-ABFD14626EE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8294559A-8B6D-4D4E-B7D2-AE8794A4210F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8294559A-8B6D-4D4E-B7D2-AE8794A4210F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8294559A-8B6D-4D4E-B7D2-AE8794A4210F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8294559A-8B6D-4D4E-B7D2-AE8794A4210F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
