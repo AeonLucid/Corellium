@@ -15,7 +15,7 @@ public class CorelliumClient
     private readonly CorelliumOptions _options;
 
     private TokenResponseCache? _accessToken;
-    private List<CorelliumSupportedDevice>? _supportedDevices;
+    private CorelliumSupportedDevice[]? _supportedDevices;
     
     private Dictionary<string, CorelliumTeam> _teams;
     private Dictionary<string, CorelliumUser> _users;
@@ -215,11 +215,49 @@ public class CorelliumClient
     /// <summary>
     ///     Returns supported device list
     /// </summary>
-    public async Task<List<CorelliumSupportedDevice>> GetSupportedDevicesAsync()
+    public async Task<CorelliumSupportedDevice[]> GetSupportedDevicesAsync()
     {
         return _supportedDevices ??= await Http
             .Request("/supported")
             .WithHeader("Authorization", await GetAccessTokenAsync())
-            .GetJsonAsync<List<CorelliumSupportedDevice>>();
+            .GetJsonAsync<CorelliumSupportedDevice[]>();
+    }
+
+    /// <summary>
+    ///     Returns all keys for the project
+    /// </summary>
+    /// <param name="projectId">Project Id</param>
+    /// <returns></returns>
+    public async Task<CorelliumProjectKey[]> GetProjectKeysAsync(string projectId)
+    {
+        return await Http
+            .Request("/projects", projectId, "keys")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .GetJsonAsync<CorelliumProjectKey[]>();
+    }
+
+    /// <summary>
+    ///     Adds key to the project
+    /// </summary>
+    /// <param name="projectId">Project Id</param>
+    /// <param name="key">The public key, as formatted in a .pub file</param>
+    /// <param name="kind"></param>
+    /// <param name="label">Defaults to the public key comment, if present</param>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<CorelliumProjectKey> AddProjectKeyAsync(string projectId, string key, KeyKind kind, string? label = null)
+    {
+        return await Http
+            .Request("/projects", projectId, "keys")
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .PostJsonAsync(new ProjectKeyCreate(key, kind, label))
+            .ReceiveJson<CorelliumProjectKey>();
+    }
+
+    public async Task DeleteProjectKeyAsync(string projectId, string keyId)
+    {
+        await Http
+            .Request("/projects", projectId, "keys", keyId)
+            .WithHeader("Authorization", await GetAccessTokenAsync())
+            .DeleteAsync();
     }
 }

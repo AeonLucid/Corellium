@@ -1,20 +1,5 @@
 ﻿namespace Corellium.Api.Net.Models;
 
-public record CorelliumKernelImage(
-    string Id, 
-    string Name
-);
-
-public record CorelliumPartitionImage(
-    string Id, 
-    string Name
-);
-
-public record CorelliumFirmwareImage(
-    string Id, 
-    string Name
-);
-
 /// <param name="Status">Example "active"</param>
 /// <param name="Id">uuid needed to pass to a createInstance call if this is a kernel</param>
 /// <param name="Name">Example "Image"</param>
@@ -34,7 +19,7 @@ public record CorelliumImage(
     string Type,
     string Self,
     string File,
-    ulong Size,
+    long Size,
     string Checksum,
     string Encoding,
     string Project,
