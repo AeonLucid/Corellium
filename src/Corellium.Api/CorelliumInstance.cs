@@ -7,17 +7,18 @@ namespace Corellium.Api;
 public class CorelliumInstance : IDisposable
 {
     private readonly CorelliumClient _client;
-    private readonly CorelliumProject _project;
-    private readonly CorelliumInstanceInfo _info;
-
+    
+    private CorelliumInstanceInfo _info;
     private CorelliumAgent? _agent;
     
     public CorelliumInstance(CorelliumClient client, CorelliumProject project, CorelliumInstanceInfo info)
     {
         _client = client;
-        _project = project;
+        Project = project;
         _info = info;
     }
+    
+    public CorelliumProject Project { get; }
 
     /// <summary>
     ///     The instance name.
@@ -73,6 +74,24 @@ public class CorelliumInstance : IDisposable
     /// </summary>
     public CorelliumInstanceBootOptions BootOptions => _info.BootOptions;
 
+    /// <summary>
+    ///     The instance internal IP address.
+    /// </summary>
+    public string ServiceIp => _info.ServiceIp;
+
+    /// <summary>
+    ///     VPN Services.
+    /// </summary>
+    public CorelliumInstanceServicesVpn? VpnServices => _info.Services.Vpn;
+
+    public async Task UpdateAsync()
+    {
+        _info = await _client.Http
+            .Request($"/instances/{_info.Id}")
+            .WithHeader("Authorization", await _client.GetAccessTokenAsync())
+            .GetJsonAsync<CorelliumInstanceInfo>();
+    }
+    
     public async Task<Stream> TakeScreenshotAsync(string format = "png", int scale = 1)
     {
         return await _client.Http
@@ -80,6 +99,14 @@ public class CorelliumInstance : IDisposable
             .SetQueryParam("scale", scale)
             .WithHeader("Authorization", await _client.GetAccessTokenAsync())
             .GetStreamAsync();
+    }
+
+    public async Task<IFlurlResponse> PatchInstanceAsync(PatchInstanceOptions options)
+    {
+        return await _client.Http
+            .Request($"/instances/{_info.Id}")
+            .WithHeader("Authorization", await _client.GetAccessTokenAsync())
+            .PatchJsonAsync(options);
     }
 
     public async Task<CorelliumAgent> AgentAsync()

@@ -289,6 +289,26 @@ public class CorelliumAgent : IDisposable
         return null;
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="path"></param>
+    public async Task<AgentStat?> StatAsync(string path)
+    {
+        var res = await CommandAsync("file", "stat", new Dictionary<string, JsonNode>
+        {
+            { "path", path! }
+        });
+        
+        var success = res.Object!.TryGetPropertyValue("success", out var value) && value!.GetValue<bool>();
+        if (!success)
+        {
+            return null;
+        }
+        
+        return res.Object.Deserialize<AgentStat>()!;
+    }
+
     public async Task<bool> InstallFileAsync(Stream fileStream)
     {
         var path = await TempFileAsync();

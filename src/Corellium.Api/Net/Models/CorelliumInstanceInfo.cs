@@ -4,7 +4,7 @@ public record CorelliumInstanceServicesVpnProxy(
     int DevicePort,
     int RouterPort,
     string Status,
-    int ExposedPort
+    int? ExposedPort
 );
 
 public record CorelliumInstanceServicesVpn(
