@@ -48,7 +48,7 @@ public class CorelliumProject
             .WithHeader("Authorization", await _client.GetAccessTokenAsync())
             .GetJsonAsync<List<CorelliumInstanceInfo>>();
 
-        return info.Select(x => new CorelliumInstance(this, x)).ToList();
+        return info.Select(x => new CorelliumInstance(_client, this, x)).ToList();
     }
 
     public async Task<CorelliumInstance> GetInstanceAsync(string instanceId)
@@ -58,7 +58,7 @@ public class CorelliumProject
                 .WithHeader("Authorization", await _client.GetAccessTokenAsync())
                 .GetJsonAsync<CorelliumInstanceInfo>();
 
-        return new CorelliumInstance(this, info);
+        return new CorelliumInstance(_client, this, info);
     }
 
     public async Task<CorelliumInstance> CreateInstanceAsync(CorelliumInstanceCreate options)

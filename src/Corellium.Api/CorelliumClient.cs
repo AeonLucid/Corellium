@@ -10,37 +10,45 @@ using Flurl.Http.Configuration;
 
 namespace Corellium.Api;
 
-public class CorelliumClient
+public class CorelliumClient : IDisposable
 {
-    private readonly CorelliumOptions _options;
-
     private TokenResponseCache? _accessToken;
     private CorelliumSupportedDevice[]? _supportedDevices;
     
     private Dictionary<string, CorelliumTeam> _teams;
     private Dictionary<string, CorelliumUser> _users;
 
-    public CorelliumClient(CorelliumOptions options)
+    public CorelliumClient(CorelliumOptions options, IWebProxy? proxy = null)
     {
-        _options = options;
+        Proxy = proxy;
+        Options = options;
+        
         _teams = new Dictionary<string, CorelliumTeam>();
         _users = new Dictionary<string, CorelliumUser>();
+
+        var httpSettings = new ClientFlurlHttpSettings
+        {
+            JsonSerializer = new JsonNetSerializer(new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            })
+        };
+
+        if (proxy != null)
+        {
+            httpSettings.HttpClientFactory = new ProxyHttpClientFactory(proxy);
+        }
         
         Http = new FlurlClient
         {
-            BaseUrl = $"{_options.Endpoint}/api/v1",
-            Settings = new ClientFlurlHttpSettings
-            {
-                HttpClientFactory = new ProxyHttpClientFactory(new WebProxy("http://127.0.0.1:8888")),
-                JsonSerializer = new JsonNetSerializer(new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                })
-            }
+            BaseUrl = $"{Options.Endpoint}/api/v1",
+            Settings = httpSettings
         };
     }
     
+    internal IWebProxy? Proxy { get; }
+    internal CorelliumOptions Options { get; }
     internal FlurlClient Http { get; }
 
     private bool ShouldRefreshToken()
@@ -65,15 +73,15 @@ public class CorelliumClient
         {
             var request = new TokensRequest();
 
-            if (!string.IsNullOrEmpty(_options.ApiToken))
+            if (!string.IsNullOrEmpty(Options.ApiToken))
             {
-                request.ApiToken = _options.ApiToken;
+                request.ApiToken = Options.ApiToken;
             }
             else
             {
-                request.Username = _options.Username;
-                request.Password = _options.Password;
-                request.TotpToken = _options.TotpToken;
+                request.Username = Options.Username;
+                request.Password = Options.Password;
+                request.TotpToken = Options.TotpToken;
             }
 
             var token = await Http
@@ -259,5 +267,10 @@ public class CorelliumClient
             .Request("/projects", projectId, "keys", keyId)
             .WithHeader("Authorization", await GetAccessTokenAsync())
             .DeleteAsync();
+    }
+
+    public void Dispose()
+    {
+        Http.Dispose();
     }
 }

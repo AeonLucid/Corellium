@@ -25,6 +25,10 @@ public record CorelliumInstanceBootOptions(
     bool Aprr
 );
 
+public record CorelliumInstanceAgent(
+    string Hash, 
+    string Info);
+
 public record CorelliumInstanceInfo(
     string Id,
     string Name,
@@ -45,7 +49,7 @@ public record CorelliumInstanceInfo(
     DateTimeOffset Created,
     string? Ipsw,
     string Os,
-    string? Agent,
+    CorelliumInstanceAgent? Agent,
     int? ExposePort,
     // TODO: fault
     string[] Patches,
